@@ -1,0 +1,30 @@
+
+name: Deploy via Ansible (EC2)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_KEY }}" > ~/.ssh/key.pem
+        chmod 400 ~/.ssh/key.pem
+
+    - name: SSH and Deploy
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ec2-user@${{ secrets.EC2_IP }} << 'EOF'
+          cd terraform_anisble
+          git pull
+          cd ansible
+          ansible-playbook -i inventories/dev playbooks/site.yml
+        EOF
