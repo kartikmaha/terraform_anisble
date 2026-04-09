@@ -1,0 +1,37 @@
+---
+# tasks file for roles/app-role
+- name: Install required packages
+  yum:
+    name:
+      - docker
+      - git
+    state: present
+
+- name: Start Docker
+  service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Create app directory
+  file:
+    path: /home/ec2-user/app
+    state: directory
+
+- name: Copy application code
+  copy:
+    src: ../../../app/
+    dest: /home/ec2-user/app/
+
+- name: Build Docker image
+  shell: |
+    cd /home/ec2-user/app
+    docker build -t myapp .
+
+- name: Run Docker container
+  docker_container:
+    name: myapp
+    image: myapp
+    state: started
+    ports:
+      - "80:80"
