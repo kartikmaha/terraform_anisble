@@ -1,4 +1,13 @@
 ---
+- name: Bootstrap EC2 (Install Python)
+  hosts: web
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Install Python (Amazon Linux)
+      raw: sudo yum install -y python3
+
 - name: Deploy Application using Ansible
   hosts: web
   become: true
@@ -10,4 +19,4 @@
     app_port: 80
 
   roles:
-    - role: app-role
+    - app-role
