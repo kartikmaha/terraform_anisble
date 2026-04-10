@@ -1,9 +1,15 @@
-tasks:
+---
+- name: Bootstrap EC2 (Install Python properly)
+  hosts: web
+  become: true
+  gather_facts: false
+
+  tasks:
     - name: Install Python + dependencies
       raw: |
         sudo yum install -y python3 python3-pip python3-libselinux
 
-    - name: Set Python symlink (important)
+    - name: Set Python symlink
       raw: |
         sudo ln -sf /usr/bin/python3 /usr/bin/python
 
