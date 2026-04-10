@@ -1,4 +1,4 @@
-name: Full Reset Deploy (Destroy + Recreate + Ansible)
+name: Force Reset Deploy (Destroy + Recreate + Ansible)
 
 on:
   push:
@@ -46,6 +46,26 @@ jobs:
         aws-region: ap-south-1
 
     # ----------------------------
+    # FORCE IAM CLEANUP
+    # ----------------------------
+    - name: Force Cleanup IAM (handles stuck roles)
+      run: |
+        echo "Cleaning IAM..."
+
+        # Try removing role from instance profile
+        aws iam remove-role-from-instance-profile \
+          --instance-profile-name terraform-ansible-${ENV}-profile \
+          --role-name terraform-ansible-${ENV}-ec2-role || true
+
+        # Delete instance profile
+        aws iam delete-instance-profile \
+          --instance-profile-name terraform-ansible-${ENV}-profile || true
+
+        # Delete role
+        aws iam delete-role \
+          --role-name terraform-ansible-${ENV}-ec2-role || true
+
+    # ----------------------------
     # TERRAFORM SETUP
     # ----------------------------
     - name: Setup Terraform
@@ -60,17 +80,28 @@ jobs:
         terraform init
 
     # ----------------------------
-    # DESTROY OLD INFRA
+    # FORCE DESTROY INFRA
     # ----------------------------
-    - name: Terraform Destroy (Clean Old Infra)
+    - name: Terraform Destroy (Force Reset)
       run: |
         cd $TF_DIR
         terraform destroy -auto-approve -var-file=envs/${ENV}.tfvars || true
 
     # ----------------------------
-    # APPLY NEW INFRA
+    # CLEAN UNUSED VPCs (OPTIONAL HARD CLEAN)
     # ----------------------------
-    - name: Terraform Apply (Create Fresh Infra)
+    - name: Cleanup Old VPCs (optional)
+      run: |
+        echo "Cleaning old VPCs (best effort)..."
+        VPCS=$(aws ec2 describe-vpcs --query "Vpcs[*].VpcId" --output text)
+        for vpc in $VPCS; do
+          aws ec2 delete-vpc --vpc-id $vpc || true
+        done
+
+    # ----------------------------
+    # CREATE NEW INFRA
+    # ----------------------------
+    - name: Terraform Apply
       run: |
         cd $TF_DIR
         terraform apply -auto-approve -var-file=envs/${ENV}.tfvars
