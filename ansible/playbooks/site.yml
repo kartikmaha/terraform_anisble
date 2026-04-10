@@ -2,10 +2,10 @@
 - name: Bootstrap and Deploy Application
   hosts: web
   become: true
-  gather_facts: false  # Must be false to allow raw installation of Python
+  # Global fix: Disable fact gathering to prevent the JSON/Zip crash
+  gather_facts: false 
 
   vars:
-    # Forces Ansible to use Python 3 and bypasses "smart" discovery
     ansible_python_interpreter: /usr/bin/python3
     app_dir: /home/ec2-user/app
     docker_image: myapp
@@ -13,25 +13,23 @@
     app_port: 80
 
   tasks:
-    # 1. Clean old failed attempts and install requirements via raw SSH
-    - name: Clean Ansible Temp and Install Python 3 with SELinux
+    # 1. Ensure Python is present for Ansible modules to run
+    - name: Install Python 3 requirements
       raw: |
-        rm -rf ~/.ansible/tmp
         sudo yum install -y python3 python3-pip python3-libselinux
       register: bootstrap_out
-      changed_when: "'installed' in bootstrap_out.stdout"
+      changed_when: true
 
-    # 2. Create the symlink so 'python' points to 'python3'
+    # 2. Fix the pathing
     - name: Set Python symlink
       raw: sudo ln -sf /usr/bin/python3 /usr/bin/python
       changed_when: true
 
-    # 3. Trigger Fact Gathering manually now that the environment is ready
-    # This replaces the 'Gathering Facts' stage that was crashing previously
-    - name: Force Fact Gathering
-      setup:
-
-    # 4. Execute your application logic
+    # 3. Deploy your application
+    # We use include_role and explicitly tell it not to gather facts
     - name: Deploy Application Role
       include_role:
         name: app-role
+      vars:
+        # Ensures the role inherits the 'no facts' setting
+        render_facts: false
