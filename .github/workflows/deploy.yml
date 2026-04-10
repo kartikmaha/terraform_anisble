@@ -1,10 +1,13 @@
 
-name: Deploy via Ansible (EC2)
+name: Full Deploy (Terraform + Ansible)
 
 on:
   push:
     branches:
       - main
+
+env:
+  AWS_REGION: ap-south-1
 
 jobs:
   deploy:
@@ -14,17 +17,77 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
+    # ----------------------------
+    # SET ENV (dev/stg/prd)
+    # ----------------------------
+    - name: Set Environment
+      run: |
+        echo "ENV=dev" >> $GITHUB_ENV
+
+    # ----------------------------
+    # AWS AUTH
+    # ----------------------------
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    # ----------------------------
+    # TERRAFORM
+    # ----------------------------
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+
+    - name: Terraform Init
+      run: |
+        cd terraform
+        terraform init
+
+    - name: Terraform Apply
+      run: |
+        cd terraform
+        terraform apply -auto-approve -var-file=envs/${{ env.ENV }}.tfvars
+
+    # ----------------------------
+    # GET EC2 IP
+    # ----------------------------
+    - name: Get EC2 IP
+      id: get_ip
+      run: |
+        cd terraform
+        IP=$(terraform output -raw instance_ip)
+        echo "EC2_IP=$IP" >> $GITHUB_ENV
+
+    # ----------------------------
+    # SETUP SSH
+    # ----------------------------
     - name: Setup SSH Key
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.EC2_KEY }}" > ~/.ssh/key.pem
         chmod 400 ~/.ssh/key.pem
 
-    - name: SSH and Deploy
+    # ----------------------------
+    # INSTALL ANSIBLE
+    # ----------------------------
+    - name: Install Ansible
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ec2-user@${{ secrets.EC2_IP }} << 'EOF'
-          cd terraform_anisble
-          git pull
-          cd ansible
-          ansible-playbook -i inventories/dev playbooks/site.yml
-        EOF
+        sudo apt update
+        sudo apt install -y ansible
+
+    # ----------------------------
+    # CREATE INVENTORY (DYNAMIC)
+    # ----------------------------
+    - name: Create Inventory
+      run: |
+        echo "[web]" > inventory
+        echo "$EC2_IP ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/key.pem" >> inventory
+
+    # ----------------------------
+    # RUN ANSIBLE
+    # ----------------------------
+    - name: Run Ansible
+      run: |
+        ansible-playbook -i inventory ansible/playbooks/site.yml
