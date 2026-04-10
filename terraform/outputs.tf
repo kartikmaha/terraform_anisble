@@ -80,7 +80,7 @@ output "deployment_info" {
 🚀 DevOps Deployment Complete
 ========================================
 
-Environment: ${var.env}
+Environment: ${var.environment}
 
 EC2 Public IP: ${aws_instance.app_server.public_ip}
 
