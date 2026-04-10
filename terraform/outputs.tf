@@ -50,6 +50,12 @@ output "instance_ip" {
   value       = aws_instance.app_server.public_ip
 }
 
+# ✅ ADD THIS HERE
+output "ansible_host" {
+  description = "Host for Ansible"
+  value       = aws_instance.app_server.public_ip
+}
+
 # ========================================
 # SSH Access Helper
 # ========================================
