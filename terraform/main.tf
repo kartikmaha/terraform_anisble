@@ -23,7 +23,7 @@ provider "aws" {
   default_tags {
     tags = {
       Project     = var.project_name
-      Environment = var.env
+      Environment = var.environment
       ManagedBy   = "Terraform"
     }
   }
@@ -33,11 +33,9 @@ provider "aws" {
 # Data Sources
 # ========================================
 
-# Get latest Amazon Linux AMI
 data "aws_ami" "amazon_linux" {
   most_recent = true
-
-  owners = ["amazon"]
+  owners      = ["amazon"]
 
   filter {
     name   = "name"
@@ -45,7 +43,6 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-# Get available AZs
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -55,7 +52,7 @@ data "aws_availability_zones" "available" {
 # ========================================
 
 resource "aws_security_group" "app_sg" {
-  name        = "${var.project_name}-${var.env}-sg"
+  name        = "${var.project_name}-${var.environment}-sg"
   description = "Allow SSH and HTTP"
   vpc_id      = aws_vpc.main.id
 
@@ -64,7 +61,7 @@ resource "aws_security_group" "app_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  #  restrict later for production
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
@@ -83,7 +80,7 @@ resource "aws_security_group" "app_sg" {
   }
 
   tags = {
-    Name = "${var.project_name}-${var.env}-sg"
+    Name = "${var.project_name}-${var.environment}-sg"
   }
 }
 
@@ -100,6 +97,6 @@ resource "aws_instance" "app_server" {
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
 
   tags = {
-    Name = "${var.project_name}-${var.env}-server"
+    Name = "${var.project_name}-${var.environment}-server"
   }
 }
