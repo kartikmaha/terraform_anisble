@@ -1,9 +1,9 @@
 ---
 # We use 'command' instead of the 'yum' module to avoid the background setup crash
-- name: Install required packages (Manual Yum)
-  command: yum install -y docker git
-  register: yum_out
-  changed_when: "'Installed' in yum_out.stdout or 'Complete!' in yum_out.stdout"
+- name: Install required packages (Strict Raw)
+  raw: sudo yum install -y docker git
+  register: yum_raw_out
+  changed_when: true
 
 - name: Start and enable Docker service
   service:
