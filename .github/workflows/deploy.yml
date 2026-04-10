@@ -1,4 +1,4 @@
-name: Full Deploy (Terraform + Ansible)
+name: Full Reset Deploy (Destroy + Recreate + Ansible)
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
       uses: actions/checkout@v3
 
     # ----------------------------
-    # SET ENV BASED ON BRANCH
+    # SET ENV
     # ----------------------------
     - name: Set Environment
       run: |
@@ -46,21 +46,6 @@ jobs:
         aws-region: ap-south-1
 
     # ----------------------------
-    # CLEANUP OLD IAM (SAFE)
-    # ----------------------------
-    - name: Cleanup Old IAM (ignore errors)
-      run: |
-        aws iam remove-role-from-instance-profile \
-          --instance-profile-name terraform-ansible-${ENV}-profile \
-          --role-name terraform-ansible-${ENV}-ec2-role || true
-
-        aws iam delete-instance-profile \
-          --instance-profile-name terraform-ansible-${ENV}-profile || true
-
-        aws iam delete-role \
-          --role-name terraform-ansible-${ENV}-ec2-role || true
-
-    # ----------------------------
     # TERRAFORM SETUP
     # ----------------------------
     - name: Setup Terraform
@@ -75,9 +60,17 @@ jobs:
         terraform init
 
     # ----------------------------
-    # TERRAFORM APPLY
+    # DESTROY OLD INFRA
     # ----------------------------
-    - name: Terraform Apply
+    - name: Terraform Destroy (Clean Old Infra)
+      run: |
+        cd $TF_DIR
+        terraform destroy -auto-approve -var-file=envs/${ENV}.tfvars || true
+
+    # ----------------------------
+    # APPLY NEW INFRA
+    # ----------------------------
+    - name: Terraform Apply (Create Fresh Infra)
       run: |
         cd $TF_DIR
         terraform apply -auto-approve -var-file=envs/${ENV}.tfvars
@@ -121,7 +114,7 @@ jobs:
       run: |
         mkdir -p ansible/inventories
         echo "[web]" > ansible/inventories/${ENV}
-        echo "$EC2_IP ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/key.pem" >> ansible/inventories/${ENV}
+        echo "$EC2_IP ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/key.pem ansible_python_interpreter=/usr/bin/python3" >> ansible/inventories/${ENV}
 
     # ----------------------------
     # RUN ANSIBLE
