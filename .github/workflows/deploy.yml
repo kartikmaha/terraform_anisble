@@ -1,4 +1,4 @@
-name: Force Reset Deploy (Destroy + Recreate + Ansible)
+name: Clean Deploy (Terraform + Ansible)
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
       uses: actions/checkout@v3
 
     # ----------------------------
-    # SET ENV
+    # SET ENV BASED ON BRANCH
     # ----------------------------
     - name: Set Environment
       run: |
@@ -46,26 +46,6 @@ jobs:
         aws-region: ap-south-1
 
     # ----------------------------
-    # FORCE IAM CLEANUP
-    # ----------------------------
-    - name: Force Cleanup IAM (handles stuck roles)
-      run: |
-        echo "Cleaning IAM..."
-
-        # Try removing role from instance profile
-        aws iam remove-role-from-instance-profile \
-          --instance-profile-name terraform-ansible-${ENV}-profile \
-          --role-name terraform-ansible-${ENV}-ec2-role || true
-
-        # Delete instance profile
-        aws iam delete-instance-profile \
-          --instance-profile-name terraform-ansible-${ENV}-profile || true
-
-        # Delete role
-        aws iam delete-role \
-          --role-name terraform-ansible-${ENV}-ec2-role || true
-
-    # ----------------------------
     # TERRAFORM SETUP
     # ----------------------------
     - name: Setup Terraform
@@ -80,26 +60,15 @@ jobs:
         terraform init
 
     # ----------------------------
-    # FORCE DESTROY INFRA
+    # TERRAFORM PLAN (GOOD PRACTICE)
     # ----------------------------
-    - name: Terraform Destroy (Force Reset)
+    - name: Terraform Plan
       run: |
         cd $TF_DIR
-        terraform destroy -auto-approve -var-file=envs/${ENV}.tfvars || true
+        terraform plan -var-file=envs/${ENV}.tfvars
 
     # ----------------------------
-    # CLEAN UNUSED VPCs (OPTIONAL HARD CLEAN)
-    # ----------------------------
-    - name: Cleanup Old VPCs (optional)
-      run: |
-        echo "Cleaning old VPCs (best effort)..."
-        VPCS=$(aws ec2 describe-vpcs --query "Vpcs[*].VpcId" --output text)
-        for vpc in $VPCS; do
-          aws ec2 delete-vpc --vpc-id $vpc || true
-        done
-
-    # ----------------------------
-    # CREATE NEW INFRA
+    # TERRAFORM APPLY
     # ----------------------------
     - name: Terraform Apply
       run: |
