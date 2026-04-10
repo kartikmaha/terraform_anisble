@@ -1,17 +1,11 @@
 ---
-# We use 'command' instead of the 'yum' module to avoid the background setup crash
-- name: Install required packages (Strict Raw)
-  raw: sudo yum install -y docker git
-  register: yum_raw_out
-  changed_when: true
-
+# We removed the 'yum' task from here because it was causing the crash
 - name: Start and enable Docker service
   service:
     name: docker
     state: started
     enabled: yes
   vars:
-    # This prevents the service module from trying to gather facts
     ansible_pkg_mgr: yum
 
 - name: Add ec2-user to docker group
