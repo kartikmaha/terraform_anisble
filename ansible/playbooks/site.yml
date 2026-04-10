@@ -1,36 +1,58 @@
 ---
-- name: Bootstrap and Deploy Application
-  hosts: web
-  become: true
-  gather_facts: false 
+# PLAY 1: Connection Verification
+- name: Wait for EC2 SSH to be ready
+  hosts: web_servers
+  gather_facts: false
+  tasks:
+    - name: Ensure port 22 is reachable
+      ansible.builtin.wait_for:
+        port: 22
+        host: "{{ ansible_host }}"
+        search_regex: OpenSSH
+        delay: 15        # Wait 15s before first check
+        timeout: 300     # Fail after 5 mins
+      delegate_to: localhost
 
+# PLAY 2: Infrastructure Configuration
+- name: Configure Web Server and Deploy App
+  hosts: web_servers
+  become: true
+  gather_facts: true     # Now safe to gather facts
+  
   vars:
-    ansible_python_interpreter: /usr/bin/python3
-    ansible_pkg_mgr: yum
-    app_dir: /home/ec2-user/app
-    docker_image: myapp
-    container_name: myapp
-    app_port: 80
+    # Match the port in your prd.tfvars
+    app_port: 80 
 
   tasks:
-    - name: Install Python, Docker, and Git (Raw)
-      raw: |
-        sudo yum install -y python3 python3-pip python3-libselinux docker git
-      changed_when: true
+    - name: Update all packages
+      dnf:
+        name: "*"
+        state: latest
+        update_cache: true
 
-    - name: Set Python symlink
-      raw: sudo ln -sf /usr/bin/python3 /usr/bin/python
-      changed_when: true
+    - name: Install Docker
+      dnf:
+        name: docker
+        state: present
 
-    - name: Start and Enable Docker (Raw)
-      raw: |
-        sudo systemctl start docker
-        sudo systemctl enable docker
-      changed_when: true
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: true
 
-    - name: Reset connection
-      meta: reset_connection
+    - name: Add ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: true
 
-    - name: Deploy Application Role
-      include_role:
-        name: app-role
+    - name: Pull and run Flask App from Docker Hub
+      # Replace with your actual image name if using Docker Hub
+      community.docker.docker_container:
+        name: flask_app
+        image: "{{ docker_image | default('python:3.9-slim') }}"
+        state: started
+        restart_policy: always
+        published_ports:
+          - "{{ app_port }}:{{ app_port }}"
