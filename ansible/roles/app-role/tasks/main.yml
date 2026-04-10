@@ -1,25 +1,11 @@
 ---
-# We removed the 'yum' task from here because it was causing the crash
-- name: Start and enable Docker service
-  service:
-    name: docker
-    state: started
-    enabled: yes
-  vars:
-    ansible_pkg_mgr: yum
-
 - name: Add ec2-user to docker group
-  user:
-    name: ec2-user
-    groups: docker
-    append: yes
+  raw: sudo usermod -aG docker ec2-user
+  changed_when: true
 
 - name: Create app directory
-  file:
-    path: "{{ app_dir }}"
-    state: directory
-    owner: ec2-user
-    group: ec2-user
+  shell: mkdir -p {{ app_dir }} && chown ec2-user:ec2-user {{ app_dir }}
+  changed_when: true
 
 - name: Copy application code
   copy:
@@ -28,15 +14,9 @@
     owner: ec2-user
     group: ec2-user
 
-- name: Build Docker image
+- name: Build and Run Container
   shell: |
     cd {{ app_dir }}
     docker build -t {{ docker_image }} .
-
-- name: Stop existing container (if any)
-  shell: |
     docker rm -f {{ container_name }} || true
-
-- name: Run Docker container
-  shell: |
     docker run -d -p {{ app_port }}:3000 --name {{ container_name }} {{ docker_image }}

@@ -13,8 +13,7 @@
     app_port: 80
 
   tasks:
-    # --- STAGE 1: BOOTSTRAP SYSTEM ---
-    - name: Install Python 3 and Core Tools (Raw)
+    - name: Install Python, Docker, and Git (Raw)
       raw: |
         sudo yum install -y python3 python3-pip python3-libselinux docker git
       changed_when: true
@@ -23,15 +22,15 @@
       raw: sudo ln -sf /usr/bin/python3 /usr/bin/python
       changed_when: true
 
+    - name: Start and Enable Docker (Raw)
+      raw: |
+        sudo systemctl start docker
+        sudo systemctl enable docker
+      changed_when: true
+
     - name: Reset connection
       meta: reset_connection
 
-    # --- STAGE 2: VERIFY TOOLS ---
-    - name: Verify Docker is installed
-      raw: docker --version
-      register: docker_check
-
-    # --- STAGE 3: RUN REMAINING ROLE TASKS ---
     - name: Deploy Application Role
       include_role:
         name: app-role
