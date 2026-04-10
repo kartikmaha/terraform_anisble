@@ -5,7 +5,7 @@
 variable "aws_region" {
   description = "AWS region where resources will be created"
   type        = string
-  default     = "eu-west-1"
+  default     = "ap-south-1"
 }
 
 variable "project_name" {
@@ -36,7 +36,7 @@ variable "key_name" {
 variable "ami_id" {
   description = "AMI ID for EC2 instance (Amazon Linux recommended)"
   type        = string
-  default     = "ami-09fcfca38c345ed14"
+  default     = "ami-0f5ee92e2d63afc18"
 }
 
 # ========================================
