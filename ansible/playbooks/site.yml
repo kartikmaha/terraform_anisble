@@ -1,8 +1,7 @@
 ---
-# PLAY 1: Connection Verification
 - name: Wait for EC2 SSH to be ready
   hosts: web_servers
-  gather_facts: false
+  gather_facts: false # Keep this false
   tasks:
     - name: Ensure port 22 is reachable
       ansible.builtin.wait_for:
@@ -13,20 +12,24 @@
         timeout: 300
       delegate_to: localhost
 
-# PLAY 2: Infrastructure Configuration
 - name: Configure Web Server and Deploy App
   hosts: web_servers
   become: true
-  # Explicitly tell Ansible where Python is to avoid discovery errors
+  gather_facts: false # Change this to FALSE initially to avoid the crash
+  
   vars:
     ansible_python_interpreter: /usr/bin/python3
     app_port: 80 
     docker_image: "kartikmaha/terraform_anisble:latest"
 
-  # We can turn fact gathering back on now that compression is disabled
-  gather_facts: true 
-
   tasks:
+    - name: Ensure Python 3 is installed (Pre-Flight Check)
+      raw: test -e /usr/bin/python3 || (yum install -y python3)
+      changed_when: false
+
+    - name: Now Gather Facts Manually
+      setup: # This runs the 'Gathering Facts' logic AFTER we confirm Python3
+
     - name: Install Docker
       dnf:
         name: docker
