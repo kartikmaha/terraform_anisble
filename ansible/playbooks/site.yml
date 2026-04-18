@@ -21,17 +21,16 @@
   
   vars:
     app_port: 80 
-    # Use your Docker Hub image here
     docker_image: "kartikmaha/terraform_anisble:latest"
 
   tasks:
-    - name: Install Docker (Amazon Linux 2023)
+    - name: Install Docker
       dnf:
         name: docker
         state: present
         update_cache: true
 
-    - name: Start and enable Docker
+    - name: Start and enable Docker service
       systemd:
         name: docker
         state: started
@@ -46,12 +45,11 @@
     - name: Reset connection to apply group changes
       ansible.builtin.meta: reset_connection
 
-    - name: Pull and run Flask App
+    - name: Pull and run Flask App from Docker Hub
       community.docker.docker_container:
         name: flask_app
         image: "{{ docker_image }}"
         state: started
         restart_policy: always
-        # Ensure your Flask app listens on 5000 inside the Container
         published_ports:
           - "{{ app_port }}:5000"
