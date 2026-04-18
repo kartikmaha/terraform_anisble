@@ -52,6 +52,6 @@
         image: "{{ docker_image }}"
         state: started
         restart_policy: always
-        # Ensure your Flask app listens on 5000 inside the container
+        # Ensure your Flask app listens on 5000 inside the Container
         published_ports:
           - "{{ app_port }}:5000"
