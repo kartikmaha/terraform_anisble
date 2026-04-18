@@ -2,10 +2,7 @@ name: Clean Deploy (Terraform + Ansible)
 
 on:
   push:
-    branches:
-      - main
-      - dev
-      - stg
+    branches: [main, dev, stg]
 
 jobs:
   deploy:
@@ -37,14 +34,13 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init and Apply
+      - name: Terraform Init & Apply
         id: tf
         run: |
           cd $TF_DIR
           terraform init
-          terraform apply -auto-approve -var-file=envs/${ENV}.tfvars
-          # Capture output and set to ENV for later steps
-          echo "EC2_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
+          terraform apply -auto-approve -var-file=envs/${{ env.ENV }}.tfvars
+          echo "EC2_IP=$(terraform output -raw instance_public_ip)" >> $GITHUB_ENV
 
       - name: Setup SSH Key
         run: |
@@ -52,16 +48,17 @@ jobs:
           echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: Create Inventory
+      - name: Create Dynamic Inventory
         run: |
           mkdir -p ansible/inventories
-          # IMPORTANT: Group name must match site.yml [web_servers]
-          echo "[web_servers]" > ansible/inventories/${ENV}
-          echo "${{ env.EC2_IP }} ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventories/${ENV}
+          # Using the full path for the SSH key to avoid relative path confusion
+          echo "[web_servers]" > ansible/inventories/${{ env.ENV }}
+          echo "${{ env.EC2_IP }} ansible_user=ec2-user ansible_ssh_private_key_file=/home/runner/.ssh/id_rsa" >> ansible/inventories/${{ env.ENV }}
 
       - name: Run Ansible Playbook
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
         run: |
           cd ansible
-          ansible-playbook -i inventories/${ENV} site.yml
+          # Pointing to the new playbooks/ directory
+          ansible-playbook -i inventories/${{ env.ENV }} playbooks/site.yml
