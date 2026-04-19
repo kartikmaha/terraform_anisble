@@ -1,7 +1,7 @@
 # 🚀 AWS DevOps Pipeline built with Terraform, Ansible and Github Actions
 
-Production-style infrastructure provisioning and configuration management using Terraform (IaC), Ansible (Automation) and GitHub Action (CI/CD).
-This project demonstrates how to provision cloud resources and configure them automatically across multiple environments.
+Production-style infrastructure provisioning and configuration using Terraform (IaC), Ansible (Automation), and GitHub Actions (CI/CD).
+Demonstrates automated provisioning and configuration of cloud resources across multiple environments.
 
 ---
 
