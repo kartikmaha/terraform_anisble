@@ -72,9 +72,7 @@ This project focuses on:
 
 🔹 2. Build & Push
 
-🐳 Docker image is built using multi-stage build
-
-📤 Image is pushed to Docker Hub
+🐳 Docker image is built & pushed to Docker Hub registry
 
 ---
 
