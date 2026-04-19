@@ -18,17 +18,23 @@ Demonstrates automated provisioning and configuration of cloud resources across 
 
 ### 🔄 Detailed Project Workflow:
 
-<project workflow>
+![Project Workflow](assets/project_workflow.png)
 
 ---
 
 ### 📚 Project Snapshots
 
-<app ui>
+### 🎨 Application UI
 
-<terraform dashboard>
+![Application UI](assets/app_ui.png)
 
-<github actions dashboard>
+### 🔄 Git Hub Actions Dashboard
+
+![Project Workflow](assets/ThreeTierChatApp.png)
+
+### 🔄 AWS 
+
+![github_actions_workflow.png](assets/ThreeTierChatApp.png)
 
 ---
 
