@@ -100,8 +100,6 @@ This project focuses on:
 
 ### 📈 Future Improvements
 
-🔐 Add basic security scanning
-
 🔄 Improve CI workflow with validations (linting, formatting)
 
 📦 Use versioned Docker image tags instead of latest
