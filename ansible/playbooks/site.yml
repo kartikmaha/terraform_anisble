@@ -1,7 +1,8 @@
 ---
+# PLAY 1: Connection Check
 - name: Wait for EC2 SSH to be ready
   hosts: web_servers
-  gather_facts: false # Keep this false
+  gather_facts: false
   tasks:
     - name: Ensure port 22 is reachable
       ansible.builtin.wait_for:
@@ -12,29 +13,49 @@
         timeout: 300
       delegate_to: localhost
 
+# PLAY 2: Infrastructure Configuration
 - name: Configure Web Server and Deploy App
   hosts: web_servers
   become: true
-  gather_facts: false # Change this to FALSE initially to avoid the crash
+  # CRITICAL: Keep this false to bypass the Python SyntaxError in the setup module
+  gather_facts: false 
   
   vars:
+    # Double-down on the interpreter here as well
     ansible_python_interpreter: /usr/bin/python3
     app_port: 80 
     docker_image: "kartikmaha/terraform_anisble:latest"
 
   tasks:
-    - name: Ensure Python 3 is installed (Pre-Flight Check)
-      raw: test -e /usr/bin/python3 || (yum install -y python3)
-      changed_when: false
-
-    - name: Now Gather Facts Manually
-      setup: # This runs the 'Gathering Facts' logic AFTER we confirm Python3
-
     - name: Install Docker
-      dnf:
+      ansible.builtin.dnf:
         name: docker
         state: present
         update_cache: true
+
+    - name: Start and enable Docker service
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add ec2-user to docker group
+      ansible.builtin.user:
+        name: ec2-user
+        groups: docker
+        append: true
+
+    - name: Reset connection to apply group changes
+      ansible.builtin.meta: reset_connection
+
+    - name: Pull and run Flask App from Docker Hub
+      community.docker.docker_container:
+        name: flask_app
+        image: "{{ docker_image }}"
+        state: started
+        restart_policy: always
+        published_ports:
+          - "{{ app_port }}:3000"
 
     # ... (rest of your tasks remain the same)
 
@@ -60,4 +81,4 @@
         state: started
         restart_policy: always
         published_ports:
-          - "{{ app_port }}:5000"
+          - "{{ app_port }}:3000"
