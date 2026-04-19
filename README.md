@@ -68,9 +68,13 @@ Developer pushes code to GitHub
 
 GitHub Actions triggers the workflow
 
+---
+
 🔹 2. Build & Push
 
 Docker image is built & pushed to Docker Hub registry
+
+---
 
 🔹 3. Infrastructure Provisioning
 
@@ -78,11 +82,15 @@ Terraform provisions/updates AWS resources
 
 EC2 public IP is generated dynamically
 
+---
+
 🔹 4. Configuration & Deployment
 
 Ansible installs and configures Docker
 
 Latest container is pulled and started
+
+---
 
 🔹 5. Access
 
