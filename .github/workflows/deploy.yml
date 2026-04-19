@@ -31,6 +31,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        run: |
+          # Build from the app directory where the Dockerfile is located
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/terraform_anisble:latest ./app
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/terraform_anisble:latest
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
@@ -52,18 +64,14 @@ jobs:
         run: |
           mkdir -p ansible/inventories
           echo "[web_servers]" > ansible/inventories/${{ env.ENV }}
-          # Added ansible_python_interpreter directly to the host line
           echo "${{ env.EC2_IP }} ansible_user=ec2-user ansible_ssh_private_key_file=/home/runner/.ssh/id_rsa ansible_python_interpreter=/usr/bin/python3" >> ansible/inventories/${{ env.ENV }}
-      
-      - name: Install Ansible Docker Collection
-        run: ansible-galaxy collection install community.docker
 
       - name: Run Ansible Playbook
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
-          # This is the critical fix for the deserialization error
           ANSIBLE_MODULE_COMPRESSION: "none"
         run: |
+          # Install the docker collection in case it's missing on the runner
+          ansible-galaxy collection install community.docker
           cd ansible
-          # Pointing to the new playbooks/ directory
           ansible-playbook -i inventories/${{ env.ENV }} playbooks/site.yml

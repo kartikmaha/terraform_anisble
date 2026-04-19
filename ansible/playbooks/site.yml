@@ -17,13 +17,12 @@
 - name: Configure Web Server and Deploy App
   hosts: web_servers
   become: true
-  # CRITICAL: Keep this false to bypass the Python SyntaxError in the setup module
   gather_facts: false 
   
   vars:
-    # Double-down on the interpreter here as well
     ansible_python_interpreter: /usr/bin/python3
     app_port: 80 
+    # This must match what was pushed in the deploy.yml
     docker_image: "kartikmaha/terraform_anisble:latest"
 
   tasks:
@@ -48,37 +47,12 @@
     - name: Reset connection to apply group changes
       ansible.builtin.meta: reset_connection
 
-    - name: Pull and run Flask App from Docker Hub
+    - name: Pull and run App
       community.docker.docker_container:
         name: flask_app
         image: "{{ docker_image }}"
         state: started
-        restart_policy: always
-        published_ports:
-          - "{{ app_port }}:3000"
-
-    # ... (rest of your tasks remain the same)
-
-    - name: Start and enable Docker service
-      systemd:
-        name: docker
-        state: started
-        enabled: true
-
-    - name: Add ec2-user to docker group
-      user:
-        name: ec2-user
-        groups: docker
-        append: true
-
-    - name: Reset connection to apply group changes
-      ansible.builtin.meta: reset_connection
-
-    - name: Pull and run Flask App from Docker Hub
-      community.docker.docker_container:
-        name: flask_app
-        image: "{{ docker_image }}"
-        state: started
+        pull: true
         restart_policy: always
         published_ports:
           - "{{ app_port }}:3000"
