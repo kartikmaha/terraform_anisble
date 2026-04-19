@@ -1,4 +1,4 @@
-🚀 Terraform + Ansible Multi-Environment Infrastructure
+# 🚀 Terraform + Ansible Multi-Environment Infrastructure
 
 Production-style infrastructure provisioning and configuration management using Terraform (IaC), Ansible (Automation) and GitHub Action (CI/CD).
 This project demonstrates how to provision cloud resources and configure them automatically across multiple environments.
@@ -22,7 +22,7 @@ This project demonstrates how to provision cloud resources and configure them au
 
 ---
 
-## 📚 Project Snapshots
+### 📚 Project Snapshots
 
 <app ui>
 
@@ -32,7 +32,7 @@ This project demonstrates how to provision cloud resources and configure them au
 
 ---
 
-📌 Project Overview
+### 📌 Project Overview
 
 This project focuses on:
 
@@ -46,7 +46,7 @@ This project focuses on:
 
 ---
 
-🛠️ Technical Stack
+### 🛠️ Technical Stack
 
 ☁️ Cloud → AWS (EC2, VPC, SG, IAM)
 
@@ -60,7 +60,7 @@ This project focuses on:
 
 ---
 
-📈 Deployment Workflow
+### 📈 Deployment Workflow
 
 🔹 1. Code Push
 
@@ -95,7 +95,7 @@ This project focuses on:
 🌐 Dashboard becomes accessible at the public IP on Port 80.
 
 ---
-📈 Future Improvements
+### 📈 Future Improvements
 
 🔄 Integrate CI/CD (GitHub Actions / Jenkins)
 
@@ -107,6 +107,6 @@ This project focuses on:
 
 ---
 
-📜 License
+### 📜 License
 
 This project is licensed under the MIT License. See the LICENSE file for more details.
